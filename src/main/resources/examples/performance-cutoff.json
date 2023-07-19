@@ -1,0 +1,33 @@
+{
+	"studentPerformance":{
+		 "boardPercentage": 81.0,
+         "generalRank": 15000,
+         "categoryRank": 3900
+	},
+	"collegeCutoffs":[
+            {
+                "collegeName": "MNIT Jaipur",
+                "collegeId": 2,
+                "generalRank": 10000,
+                "branch": "CS",
+                "boardPercentage": 75.0,
+                "categoryRank": 2500
+            },
+            {
+                "collegeName": "BIT sindri",
+                "collegeId": 3,
+                "generalRank": 14000,
+                "branch": "IT",
+                "boardPercentage": 80.0,
+                "categoryRank": 1700
+            },
+            {
+                "collegeName": "BIT sindri",
+                "collegeId": 3,
+                "generalRank": 15000,
+                "branch": "ECE",
+                "boardPercentage": 80.0,
+                "categoryRank": 2000
+            }
+        ]
+}

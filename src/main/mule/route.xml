@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
+    <flow name="api-main">
+        <http:listener config-ref="api_HTTP_Listener_config" path="/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <set-variable value="#[now()]" doc:name="Captureing Start Request Time" doc:id="aab3af3a-7b1e-4de5-9864-81bb43185f84" variableName="requestTime"/>
+		<apikit:router config-ref="api_config"/>
+        
+    </flow>
+    <flow name="get:\ping:api-config" doc:id="d2a21248-bc3c-4eba-8a3e-7681f7c1e077">
+		<flow-ref doc:name="invoking ping sub flow" doc:id="3ebd3483-fa33-4edb-a15a-24d07218811b" name="healthcheckSub_Flow"/>
+    </flow>
+    <flow name="post:\allocateSeat:application\json:api-config">
+		<flow-ref doc:name="invoking allocate seat" doc:id="a0dabddc-10c4-421d-ae83-0795847b4432" name="allocateSeat-Sub_Flow"/>
+    </flow>
+</mule>

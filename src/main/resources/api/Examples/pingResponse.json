@@ -1,0 +1,8 @@
+{
+	"apiName": "exp-e-counselling",
+	"apiVersion": "v1",
+	"server": "mule-server",
+	"env": "Dev",
+	"statusCode": "200",
+	"message": "Alive"
+}

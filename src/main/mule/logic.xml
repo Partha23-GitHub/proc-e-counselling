@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:email="http://www.mulesoft.org/schema/mule/email"
+	xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+	<sub-flow name="allocateSeat-Sub_Flow" doc:id="e93f6a6b-ef6a-4dc5-bd2d-8be54ce8941b" >
+		<set-variable value="#[payload]" doc:name="Storing Original Payload" doc:id="9be7a292-ae21-4516-a518-2ac7337ba3c9" variableName="originalPayload"/>
+		<flow-ref doc:name="Fetching Student Performance" doc:id="8c1bf6c7-9be9-4bfb-a8b2-c7b6923edf67" name="getStudentPerformanceDetails_SubFlow"/>
+		<set-payload value='#[output application/json&#10;---&#10;{&#10;   "studentsDetails": {&#10;        "category":vars.studentPerformance.studentDetails.personalDetails.category&#10;    },&#10;   "collegePreference": vars.originalPayload.collegePreference&#10;}]' doc:name="Setting Payload Before Calling Cutoff flow" doc:id="46b6d5ff-19db-4018-bb9d-71ca7da612f5" />
+		<flow-ref doc:name="Fetch College Cutoffs" doc:id="e26f2821-0c5f-4630-afd4-26d1f0fd63f3" name="getCollegeCutoff_Sub_Flow"/>
+		<choice doc:name="Checking Eligibility for Preference" doc:id="ba0cda2a-25d6-4f53-9f66-be4b98c72c1f" >
+			<when expression="#[vars.studentPerformance.studentDetails.performanceDetails.boardPercentage as Number&gt;= vars.collegeCutoffs.collegeCutoffs.preference1.boardPercentage as Number and (vars.studentPerformance.studentDetails.performanceDetails.generalRank as Number&lt;= vars.collegeCutoffs.collegeCutoffs.preference1.generalRank as Number or vars.studentPerformance.studentDetails.performanceDetails.categoryRank as Number&lt;= vars.collegeCutoffs.collegeCutoffs.preference1.categoryRank as Number)]">
+				<set-payload value='#[output application/json&#10;---&#10;{&#10;	"collegeId":vars.collegeCutoffs.collegeCutoffs.preference1.collegeId,&#10;	"category":vars.studentPerformance.studentDetails.personalDetails.category,&#10;	"branch":vars.collegeCutoffs.collegeCutoffs.preference1.branch&#10;}]' doc:name="Set Payload for Fetching College Seats" doc:id="d84a7825-ee77-4521-bedf-40285fc49612" />
+				<flow-ref doc:name="invoking First Preferences Allocation Sub_flow" doc:id="411c6336-56d7-413e-b5cb-e3ad8f53650b" name="firstPreferenceAllocation_Sub_Flow"/>
+			
+</when>
+			<when expression="#[vars.studentPerformance.studentDetails.performanceDetails.boardPercentage as Number&gt;= vars.collegeCutoffs.collegeCutoffs.preference2.boardPercentage as Number and (vars.studentPerformance.studentDetails.performanceDetails.generalRank as Number&lt;= vars.collegeCutoffs.collegeCutoffs.preference2.generalRank as Number or vars.studentPerformance.studentDetails.performanceDetails.categoryRank as Number&lt;= vars.collegeCutoffs.collegeCutoffs.preference2.categoryRank as Number)]">
+				<set-payload value='#[output application/json&#10;---&#10;{&#10;	"collegeId":vars.collegeCutoffs.collegeCutoffs.preference2.collegeId,&#10;	"category":vars.studentPerformance.studentDetails.personalDetails.category,&#10;	"branch":vars.collegeCutoffs.collegeCutoffs.preference2.branch&#10;}]' doc:name="Set Payload for Fetching College Seats" doc:id="3024d66a-6286-4cb2-8555-30b8b5939c9b" />
+				<flow-ref doc:name="invoking Second Preferences Allocation Sub_flow" doc:id="da1d54ab-6d56-47a4-abb9-b1340c384e2a" name="secondPreferenceAllocation_Sub_Flow" />
+			</when>
+			
+			<when expression="#[vars.studentPerformance.studentDetails.performanceDetails.boardPercentage as Number&gt;= vars.collegeCutoffs.collegeCutoffs.preference3.boardPercentage as Number and (vars.studentPerformance.studentDetails.performanceDetails.generalRank as Number&lt;= vars.collegeCutoffs.collegeCutoffs.preference3.generalRank as Number or vars.studentPerformance.studentDetails.performanceDetails.categoryRank as Number&lt;= vars.collegeCutoffs.collegeCutoffs.preference3.categoryRank as Number)]">
+				<set-payload value='#[output application/json&#10;---&#10;{&#10;	"collegeId":vars.collegeCutoffs.collegeCutoffs.preference3.collegeId,&#10;	"category":vars.studentPerformance.studentDetails.personalDetails.category,&#10;	"branch":vars.collegeCutoffs.collegeCutoffs.preference3.branch&#10;}]' doc:name="Set Payload for Fetching College Seats" doc:id="e740bcd3-eb3b-4cac-99b6-31d92f00b19b" />
+				<flow-ref doc:name="invoking Third Preferences Allocation Sub_flow" doc:id="8426e656-1847-4aaa-ae42-4ed9ac2c1556" name="thirdPreferenceAllocation_Sub_Flow" />
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="5f92799d-4693-4f78-93a6-eeb3456017ac" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":"You didn't qualify for any of your choices, Please try again with different colleges"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			
+</otherwise>
+		
+</choice>
+
+	</sub-flow>
+	<sub-flow name="getStudentPerformanceDetails_SubFlow" doc:id="bf99c8c5-f251-4dab-ae74-f64b7ec31ba9" >
+		<ee:transform doc:name="Transform Message" doc:id="ac5371b4-2638-4793-b406-3961ce1e22b1" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	registerationId:payload.registerationId
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Request-sys-e-counselling-getPerformanceDetails-Invoke" doc:id="3714d2a1-365d-4b75-ac1d-8bcefd5b2956" config-ref="getPerformanceDetails-mongoDB" path="/getPerformanceDetails" >
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"client_secret" : "${secure::HTTPRequestor.client_secret}",
+	"client_id" : "${HTTPRequestor.client_id}"
+}]]]></http:headers>
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="7a1fe831-f750-4a4e-a795-162135de9ab1" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+payload[0]
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="Checking if registrationId is Valid or Not" doc:id="97e332d8-6b0a-4ab2-97e4-ee2def18821a" >
+			<when expression="#[isEmpty(payload)]">
+				<raise-error doc:name="Invalid RegistrationId " doc:id="1649baa6-115e-46a9-a3a7-b1bd8798a399" type="ERROR:INVALID_REGISTRATION_ID" description="Please Provide Valid Registration Id"/>
+			</when>
+			<otherwise >
+				<set-variable value="#[payload]" doc:name="Storing Student Performance" doc:id="a73296b8-2c5d-493e-80a1-1fdaee10e5c9" variableName="studentPerformance" />
+			</otherwise>
+		</choice>
+	
+</sub-flow>
+	<sub-flow name="getCollegeCutoff_Sub_Flow" doc:id="642c8c48-d0eb-48ac-b573-1da48bd386fb" >
+		<set-variable value="#[payload]" doc:name="Storing Payload for College cutoff_flow" doc:id="ee0b8b8e-087d-4a41-8562-654e6aa88be5" variableName="initialPayload" />
+		<http:request method="POST" doc:name="Request-sys-e-counselling-getCollegeCutoff-post-Invoke" doc:id="9cc9afbd-d95f-463e-966f-9ce351c6d3a9" config-ref="getCollegeCutoff-post" path="/getCollegeCutoff">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"client_secret" : "${secure::HTTPRequestor.client_secret}",
+	"client_id" : "${HTTPRequestor.client_id}"
+}]]]></http:headers>
+		</http:request>
+		<choice doc:name="Choice" doc:id="12e9bd0f-0046-4c85-bc1c-b5b7bcf9f496" >
+			<when expression="#[sizeOf(payload)&lt;3]">
+				<raise-error doc:name="Raise error" doc:id="afd12a95-6a20-4d17-bed3-2b4f63c6f6e3" type="ERROR:NOT_VALID_COLLEGE_PREFERENCES"/>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="087d94ed-74a5-4631-8845-14f320566ccd">
+			<ee:message>
+						<ee:set-payload resource="dwls/collegeCutoff_Response.dwl" />
+			</ee:message>
+		</ee:transform>
+				<set-variable value="#[payload]" doc:name="Storing Colleges Cutoffs" doc:id="c421f187-aa38-4373-8403-3217e03740d9" variableName="collegeCutoffs" />
+			</otherwise>
+		</choice>
+	
+</sub-flow>
+	<sub-flow name="getCollegeSeat_POST_Sub_Flow" doc:id="babd6c4d-5a48-4b91-8a00-e45843865041" >
+		<http:request method="POST" doc:name="Request-sys-e-counselling-getCollegeSeat-post-Invoke" doc:id="d79eb98f-ecb9-4c6a-b758-ab506fd23e37" config-ref="getCollegeSeat-post" path="/getCollegeSeat" >
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"client_secret" : "${secure::HTTPRequestor.client_secret}",
+	"client_id" : "${HTTPRequestor.client_id}"
+}]]]></http:headers>
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="efb92fa0-004e-4cc0-9219-be0732cf0338" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload[0]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	
+</sub-flow>
+	<sub-flow name="UpdateAllotedCollegeFlow" doc:id="aac789d1-6863-41c7-bf95-194d7d8a7b6d" >
+		<ee:transform doc:name="Transform Message" doc:id="7e1d350c-8845-4785-b747-e59ef1107af3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"registerationId" : vars.originalPayload.registerationId,
+	"status": "ALLOTED",
+    "collegeDetailPayload" : vars.collegeDetailPayload
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="PUT" doc:name="Request" doc:id="967ca1a7-38c5-4adf-afa9-b89327722b39" config-ref="updateAllotedCollege" path="/getPerformanceDetails">
+			<http:headers ><![CDATA[#[{
+	"client_secret" : "${secure::HTTPRequestor.client_secret}",
+	"client_id" : "${HTTPRequestor.client_id}"
+}]]]></http:headers>
+		</http:request>
+	</sub-flow>
+	<sub-flow name="getCollegeSeat_PUT_Sub_Flow" doc:id="beb29885-ee8a-4354-b40a-15dacd7af281">
+		<http:request method="PUT" doc:name="Request-sys-e-counselling-getCollegeSeat-put-Invoke" doc:id="b6d52410-9165-4160-85c0-f470bc73a0f9" config-ref="getCollegeSeat-put" path="/getCollegeSeat">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"client_secret" : "${secure::HTTPRequestor.client_secret}",
+	"client_id" : "${HTTPRequestor.client_id}"
+}]]]></http:headers>
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="8085cf99-375e-4a5c-9a08-e1ddedcadbcc">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	
+</sub-flow>
+	<flow name="EmailSending_Flow" doc:id="c7b8c036-e2de-408c-a7e3-d5df953e0a11" >
+		<vm:listener doc:name="Listener" doc:id="3a1d75c0-78dc-46cd-af2e-8d021ce8f172" config-ref="VM_Config" queueName="emailQueue" timeout="10"/>
+		<set-variable value="#[%dw 2.0&#10;output application/xml&#10;---&#10;{&#10;  &quot;html&quot;: {&#10;    &quot;head&quot;: {&#10;      &quot;title&quot;: &quot;e-counselling&quot;,&#10;      &quot;meta&quot; @(&quot;content&quot;: &quot;text/html; charset: utf-8&quot;, &quot;http-equiv&quot;: &quot;Content-Type&quot;): &quot;&quot;,&#10;      &quot;style&quot;: &quot;table, th, td {&#10;            border: 1px solid black;&#10;            border-collapse: collapse;&#10;            }&quot;&#10;    },&#10;    &quot;body&quot;: {&#10;      &quot;h1&quot;: &quot;Confirmation mail E-Counselling&quot;,&#10;      &quot;p&quot;: &quot;Based on your preferences you have been alloted the below college.&quot;,&#10;      &quot;table&quot;:{&#10;          &quot;tr&quot;:{&#10;              &quot;th&quot;:&quot;college Name&quot;,&#10;              &quot;th&quot;:&quot;Branch&quot;&#10;          },&#10;          &quot;tr&quot;:{&#10;              &quot;td&quot;:payload.allotedCollege.collegeName,&#10;              &quot;td&quot;:payload.allotedCollege.branch&#10;          }&#10;      },&#10;      &quot;p&quot;: &quot;your preferences:&quot;,&#10;      &quot;table&quot;:{&#10;          &quot;tr&quot;:{&#10;              &quot;th&quot;:&quot;Preference&quot;,&#10;              &quot;th&quot;:&quot;College Name&quot;,&#10;              &quot;th&quot;:&quot;Branch&quot;&#10;          },&#10;          &quot;tr&quot;:{&#10;              &quot;td&quot;: &quot;1&quot;,&#10;              &quot;td&quot;:payload.collegePreferences.&quot;1&quot;.collegeName,&#10;              &quot;td&quot;:payload.collegePreferences.&quot;1&quot;.branch&#10;          },&#10;           &quot;tr&quot;:{&#10;              &quot;td&quot;: &quot;2&quot;,&#10;              &quot;td&quot;:payload.collegePreferences.&quot;2&quot;.collegeName,&#10;              &quot;td&quot;:payload.collegePreferences.&quot;2&quot;.branch&#10;          },&#10;           &quot;tr&quot;:{&#10;              &quot;td&quot;: &quot;3&quot;,&#10;              &quot;td&quot;:payload.collegePreferences.&quot;3&quot;.collegeName,&#10;              &quot;td&quot;:payload.collegePreferences.&quot;3&quot;.branch&#10;          }&#10;      },&#10;      &quot;footer&quot;:{&#10;          &quot;p&quot;:&quot;For any query write an email on &quot;,&#10;          &quot;p&quot;: p('company.email'),&#10;          &quot;p&quot;:&quot;Thanks and Regards&quot;&#10;      }&#10;    }&#10;  }&#10;}]" doc:name="emailBody" doc:id="d24211cc-7f51-41e8-80e0-e97d140215d7" variableName="emailBody"/>
+		<email:send doc:name="Send" doc:id="ef857075-3dcb-4cef-83fe-6a849bdfca71" config-ref="Email_SMTP_config" fromAddress="${company.email}" subject="Confirmation Regarding College Allotment E-Counselling">
+			<email:to-addresses >
+				<email:to-address value="#[payload.email]" />
+			</email:to-addresses>
+			<email:body contentType="text/html" >
+				<email:content ><![CDATA[#[vars.emailBody]]]></email:content>
+			</email:body>
+		</email:send>
+	</flow>
+	<flow name="UpdateAllotedCollege_and_sendEmail" doc:id="1e1ecb2b-dbe7-4dcb-80e6-78f5b12397f5" >
+		<async doc:name="Async" doc:id="2a2015d9-4d77-4a49-9bdf-c98e89598b56" >
+			<flow-ref doc:name="invoke Update Alloted College In Student DB" doc:id="53cc95ea-8e80-4b2a-975b-7b86c2df1fa8" name="UpdateAllotedCollegeFlow" />
+			<ee:transform doc:name="Setting up the Payload for Publishing" doc:id="933b58b4-0a42-4f51-8112-a388279d61d3">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	email:vars.studentPerformance.studentDetails.personalDetails.email,
+	allotedCollege:{
+		collegeName:vars.seatsOfPreference1.collegeName,
+		branch:vars.collegeCutoffs.collegeCutoffs.preference1.branch
+	},
+	collegePreferences:{
+		"1":{
+			collegeName:vars.collegeCutoffs.collegeCutoffs.preference1.collegeName,
+			branch:vars.collegeCutoffs.collegeCutoffs.preference1.branch
+		},
+		"2":{
+			collegeName:vars.collegeCutoffs.collegeCutoffs.preference2.collegeName,
+			branch:vars.collegeCutoffs.collegeCutoffs.preference2.branch
+		},
+		"3":{
+			collegeName:vars.collegeCutoffs.collegeCutoffs.preference3.collegeName,
+			branch:vars.collegeCutoffs.collegeCutoffs.preference3.branch
+		}
+	}
+	
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+			<vm:publish doc:name="Publish" doc:id="9d3f34ee-1d93-4459-af7d-5eb5f97bf01b" config-ref="VM_Config" timeout="10" queueName="emailQueue" />
+		</async>
+	</flow>
+	<sub-flow name="firstPreferenceAllocation_Sub_Flow" doc:id="274efc1c-23ec-43b3-9aca-fa09b34f8cbf">
+		<flow-ref doc:name="Fetching Seats Of 1st Preferences" doc:id="35e2e381-5213-4f9d-b940-31a3f3ab1bc0" name="getCollegeSeat_POST_Sub_Flow" />
+		<set-variable value="#[payload]" doc:name="Storing Seats of Preference " doc:id="fa5814ac-8387-4ff0-a021-49b282442f5c" variableName="seatsOfPreference1" />
+		<choice doc:name="Alloting Seats based on Category or General Rank" doc:id="f1ed3d27-2381-4677-b763-5e917bbb3384">
+			<when expression='#[vars.studentPerformance.studentDetails.personalDetails.category != "General" and vars.seatsOfPreference1.categorySeats &gt;0 and vars.studentPerformance.studentDetails.performanceDetails.categoryRank as Number&lt;=vars.collegeCutoffs.collegeCutoffs.preference1.categoryRank as Number]'>
+				<set-payload value='#[output application/json&#10;---&#10;{&#10;	"collegeId":vars.collegeCutoffs.collegeCutoffs.preference1.collegeId,&#10;	"category":vars.studentPerformance.studentDetails.personalDetails.category,&#10;	"branch":vars.collegeCutoffs.collegeCutoffs.preference1.branch&#10;}]' doc:name="Set Payload For Category Seat Allocation" doc:id="eb915028-e964-453d-81ac-67ad76930179" />
+				<flow-ref doc:name="Updating College Seats" doc:id="8814570c-66a5-4127-bec0-7cfeca007135" name="getCollegeSeat_PUT_Sub_Flow" />
+				<async doc:name="Async" doc:id="61ae97b4-8c11-4513-b7d4-3b9aa5282656" >
+					<set-variable value='#[{&#10;	"collegeName":vars.seatsOfPreference1.collegeName,&#10;	"collegeId":vars.collegeCutoffs.collegeCutoffs.preference1.collegeId,&#10;	"category":vars.studentPerformance.studentDetails.personalDetails.category,&#10;	"branch":vars.collegeCutoffs.collegeCutoffs.preference1.branch,&#10;	"seatAllotedCategory":vars.studentPerformance.studentDetails.personalDetails.category&#10;}]' doc:name="Set Alloted College For Information" doc:id="b41167ef-9a5d-4272-a0a1-1cfb22842f1c" variableName="collegeDetailPayload" />
+					<flow-ref doc:name="invoking UpdateAllotedCollege_and_sendEmail" doc:id="6e5f1b74-d73d-42c0-ba58-a7c55c99c786" name="UpdateAllotedCollege_and_sendEmail" />
+				</async>
+				<ee:transform doc:name="Transform Message" doc:id="41dc3df4-6fe6-4c2b-8642-2ba47d518267">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Congratulations! You get admission on " ++ vars.seatsOfPreference1.collegeName,
+	"status": "Admission through " ++ vars.studentPerformance.studentDetails.personalDetails.category ++ " Seats",
+	"branch": vars.collegeCutoffs.collegeCutoffs.preference1.branch
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<when expression="#[vars.studentPerformance.studentDetails.performanceDetails.generalRank as Number&lt;=vars.collegeCutoffs.collegeCutoffs.preference1.generalRank as Number and vars.seatsOfPreference1.generalSeats as Number &gt;0]">
+				<set-payload value='#[output application/json&#10;---&#10;{&#10;	"collegeId":vars.collegeCutoffs.collegeCutoffs.preference1.collegeId,&#10;	"category":"General",&#10;	"branch":vars.collegeCutoffs.collegeCutoffs.preference1.branch&#10;}]' doc:name="Set Payload For General Seat Allocation" doc:id="fcc33ec8-0a1b-4d5e-83ec-c18d1a1aad3e" />
+				<flow-ref doc:name="Updating College Seats" doc:id="7ca1070f-ac8e-4221-a6c1-6767eac5b0cd" name="getCollegeSeat_PUT_Sub_Flow" />
+				<async doc:name="Async" doc:id="53290e69-9080-4e2d-a669-fd9a2fc34ec6" >
+					<set-variable value='#[{&#10;	"collegeName":vars.seatsOfPreference1.collegeName,&#10;	"collegeId":vars.collegeCutoffs.collegeCutoffs.preference1.collegeId,&#10;	"category":vars.studentPerformance.studentDetails.personalDetails.category,&#10;	"branch":vars.collegeCutoffs.collegeCutoffs.preference1.branch,&#10;	"seatAllotedCategory":"General"&#10;}]' doc:name="Set Alloted College For Information" doc:id="ee5bb0ab-5c17-415c-a92f-34efab97542b" variableName="collegeDetailPayload" />
+					<flow-ref doc:name="invoking UpdateAllotedCollege_and_sendEmail" doc:id="e3abe8d1-3144-4238-96d9-664bfa220bb8" name="UpdateAllotedCollege_and_sendEmail" />
+				</async>
+				<ee:transform doc:name="Transform Message" doc:id="204e0029-53e1-426a-9553-3212499b5baa">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Congratulations! You get admission on " ++ vars.seatsOfPreference1.collegeName,
+	"status": "Admission through General Seats",
+	"branch": vars.collegeCutoffs.collegeCutoffs.preference1.branch
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise>
+				<choice doc:name="Choice" doc:id="cfffc124-c833-49b3-ba1f-c8d6d66ce81e">
+					<when expression="#[vars.studentPerformance.studentDetails.performanceDetails.boardPercentage as Number&gt;= vars.collegeCutoffs.collegeCutoffs.preference2.boardPercentage as Number and (vars.studentPerformance.studentDetails.performanceDetails.generalRank as Number&lt;= vars.collegeCutoffs.collegeCutoffs.preference2.generalRank as Number or vars.studentPerformance.studentDetails.performanceDetails.categoryRank as Number&lt;= vars.collegeCutoffs.collegeCutoffs.preference2.categoryRank as Number)]">
+						<set-payload value='#[output application/json&#10;---&#10;{&#10;	"collegeId":vars.collegeCutoffs.collegeCutoffs.preference2.collegeId,&#10;	"category":vars.studentPerformance.studentDetails.personalDetails.category,&#10;	"branch":vars.collegeCutoffs.collegeCutoffs.preference2.branch&#10;}]' doc:name="Set Payload for Fetching College Seats" doc:id="f6a74604-5b40-459d-8963-1a043bc7522e" />
+						<flow-ref doc:name="secondPreferenceAllocation_Sub_Flow" doc:id="c73c3d93-8c33-4db8-898d-e85bd7139fbc" name="secondPreferenceAllocation_Sub_Flow" />
+					</when>
+					<when expression="#[vars.studentPerformance.studentDetails.performanceDetails.boardPercentage as Number&gt;= vars.collegeCutoffs.collegeCutoffs.preference3.boardPercentage as Number and (vars.studentPerformance.studentDetails.performanceDetails.generalRank as Number&lt;= vars.collegeCutoffs.collegeCutoffs.preference3.generalRank as Number or vars.studentPerformance.studentDetails.performanceDetails.categoryRank as Number&lt;= vars.collegeCutoffs.collegeCutoffs.preference3.categoryRank as Number)]">
+						<set-payload value='#[output application/json&#10;---&#10;{&#10;	"collegeId":vars.collegeCutoffs.collegeCutoffs.preference3.collegeId,&#10;	"category":vars.studentPerformance.studentDetails.personalDetails.category,&#10;	"branch":vars.collegeCutoffs.collegeCutoffs.preference3.branch&#10;}]' doc:name="Set Payload for Fetching College Seats" doc:id="3ef2e9e3-c54b-4e1c-b311-ae3ae552147b" />
+						<flow-ref doc:name="invoking Third Preferences Allocation Sub_flow" doc:id="42bbf84e-e1a8-4c72-b1b1-7a8d0df298ee" name="thirdPreferenceAllocation_Sub_Flow" />
+					</when>
+					<otherwise>
+						<ee:transform doc:name="Transform Message" doc:id="280a33c6-437b-4d85-be4b-6bf99d591715" >
+							<ee:message >
+								<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":"You didn't qualify for any of your choices, Please try again with different colleges"
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+					</otherwise>
+				</choice>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="secondPreferenceAllocation_Sub_Flow" doc:id="029ec0b9-c490-44c0-8013-be16d525baae" >
+		<flow-ref doc:name="Fetching Seats Of 2nd Preferences" doc:id="049a93e8-727a-408e-a229-07ad47e7330c" name="getCollegeSeat_POST_Sub_Flow" />
+		<set-variable value="#[payload]" doc:name="Storing Seats of Preference " doc:id="6a7c31b6-c568-454b-8b6f-fa3eb25a1c0d" variableName="seatsOfPreference2" />
+		<choice doc:name="Alloting Seats based on Category or General Rank" doc:id="45201a12-fff3-47f0-83f9-9db7c401f014" >
+			<when expression='#[vars.studentPerformance.studentDetails.personalDetails.category != "General" and vars.seatsOfPreference2.categorySeats &gt;0 and vars.studentPerformance.studentDetails.performanceDetails.categoryRank as Number &lt;=vars.collegeCutoffs.collegeCutoffs.preference2.categoryRank as Number]'>
+				<set-payload value='#[output application/json&#10;---&#10;{&#10;	"collegeId":vars.collegeCutoffs.collegeCutoffs.preference2.collegeId,&#10;	"category":vars.studentPerformance.studentDetails.personalDetails.category,&#10;	"branch":vars.collegeCutoffs.collegeCutoffs.preference2.branch&#10;}]' doc:name="Set Payload For Category Seat Allocation" doc:id="413e2b4e-b2cd-4419-8186-75ba71f3905d" />
+				<flow-ref doc:name="Updating College Seats" doc:id="5c21bda8-d967-47c7-b5a5-6eb51664458a" name="getCollegeSeat_PUT_Sub_Flow" />
+				<async doc:name="Async" doc:id="91bd2b55-1b26-4852-b9f7-2f1f0926d252" >
+					<set-variable value='#[{&#10;	"collegeName":vars.seatsOfPreference2.collegeName,&#10;	"collegeId":vars.collegeCutoffs.collegeCutoffs.preference2.collegeId,&#10;	"category":vars.studentPerformance.studentDetails.personalDetails.category,&#10;	"branch":vars.collegeCutoffs.collegeCutoffs.preference2.branch,&#10;	"seatAllotedCategory":vars.studentPerformance.studentDetails.personalDetails.category&#10;}]' doc:name="Set Alloted College For Information" doc:id="040aac19-b766-4dd7-98bb-78d38dc31cb3" variableName="collegeDetailPayload" />
+					<flow-ref doc:name="invoking UpdateAllotedCollege_and_sendEmail" doc:id="f686e157-eb05-45b2-8f96-c9c1d6f81456" name="UpdateAllotedCollege_and_sendEmail" />
+				</async>
+				<ee:transform doc:name="Transform Message" doc:id="73142dc3-a117-4ab2-9657-ed312aa15347" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Congratulations! You get admission on " ++ vars.seatsOfPreference2.collegeName,
+	"status": "Admission through " ++ vars.studentPerformance.studentDetails.personalDetails.category ++ " Seats",
+	"branch": vars.collegeCutoffs.collegeCutoffs.preference2.branch
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<when expression="#[vars.studentPerformance.studentDetails.performanceDetails.generalRank as Number&lt;=vars.collegeCutoffs.collegeCutoffs.preference2.generalRank as Number and vars.seatsOfPreference2.generalSeats as Number &gt;0]" >
+				<set-payload value='#[output application/json&#10;---&#10;{&#10;	"collegeId":vars.collegeCutoffs.collegeCutoffs.preference2.collegeId,&#10;	"category":"General",&#10;	"branch":vars.collegeCutoffs.collegeCutoffs.preference2.branch&#10;}]' doc:name="Set Payload For General Seat Allocation" doc:id="452a3c1c-fba1-47bf-8f9c-273976b6a460" />
+				<flow-ref doc:name="Updating College Seats" doc:id="07568744-585c-4c5d-a068-07637d8d7ca4" name="getCollegeSeat_PUT_Sub_Flow" />
+				<async doc:name="Async" doc:id="aaa0e995-7901-4285-bb4d-de752b662a9e" >
+					<set-variable value='#[{&#10;	"collegeName":vars.seatsOfPreference2.collegeName,&#10;	"collegeId":vars.collegeCutoffs.collegeCutoffs.preference2.collegeId,&#10;	"category":vars.studentPerformance.studentDetails.personalDetails.category,&#10;	"branch":vars.collegeCutoffs.collegeCutoffs.preference2.branch,&#10;	"seatAllotedCategory":"General"&#10;}]' doc:name="Set Alloted College For Information" doc:id="f6995396-ba54-4ec7-8886-f9546b8ffb1d" variableName="collegeDetailPayload" />
+					<flow-ref doc:name="invoking UpdateAllotedCollege_and_sendEmail" doc:id="2e86d90a-538d-4951-8347-6ccca00e150b" name="UpdateAllotedCollege_and_sendEmail" />
+				</async>
+				<ee:transform doc:name="Transform Message" doc:id="d5e0f8e5-ea37-4bf7-b09a-382bb3eb96ab" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Congratulations! You get admission on " ++ vars.seatsOfPreference2.collegeName,
+	"status": "Admission through General Seats",
+	"branch": vars.collegeCutoffs.collegeCutoffs.preference2.branch
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<choice doc:name="Choice" doc:id="7437aa54-af3d-42c5-81ca-d557b167e36b">
+					<when expression="#[vars.studentPerformance.studentDetails.performanceDetails.boardPercentage as Number&gt;= vars.collegeCutoffs.collegeCutoffs.preference3.boardPercentage as Number and (vars.studentPerformance.studentDetails.performanceDetails.generalRank as Number&lt;= vars.collegeCutoffs.collegeCutoffs.preference3.generalRank as Number or vars.studentPerformance.studentDetails.performanceDetails.categoryRank as Number&lt;= vars.collegeCutoffs.collegeCutoffs.preference3.categoryRank as Number)]">
+						<set-payload value='#[output application/json&#10;---&#10;{&#10;	"collegeId":vars.collegeCutoffs.collegeCutoffs.preference3.collegeId,&#10;	"category":vars.studentPerformance.studentDetails.personalDetails.category,&#10;	"branch":vars.collegeCutoffs.collegeCutoffs.preference3.branch&#10;}]' doc:name="Set Payload for Fetching College Seats" doc:id="6497b70d-ac18-45dc-88cb-74b941bd7775" />
+						<flow-ref doc:name="thirdPreferenceAllocation_Sub_Flow" doc:id="ccccccbc-09c8-4631-9e0d-5c953d546362" name="thirdPreferenceAllocation_Sub_Flow" />
+					</when>
+					<otherwise >
+						<ee:transform doc:name="Transform Message" doc:id="17d81668-05e4-45ba-b8ac-7970e5221dc8" >
+							<ee:message >
+								<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":"You didn't qualify for any of your choices, Please try again with different colleges"
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+					</otherwise>
+				</choice>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="thirdPreferenceAllocation_Sub_Flow" doc:id="a4b027ac-0fd9-4c6e-bcf3-755542f8e65d" >
+		<flow-ref doc:name="Fetching Seats Of 3rd Preferences" doc:id="1369e6c6-0453-4c3f-a19a-b5cbb5661fc5" name="getCollegeSeat_POST_Sub_Flow" />
+		<set-variable value="#[payload]" doc:name="Storing Seats of Preference " doc:id="f5ea0c75-0e86-42c9-855a-b6781a274247" variableName="seatsOfPreference3" />
+		<choice doc:name="Alloting Seats based on Category or General Rank1" doc:id="b0531f8d-18e9-4570-91dc-21af24739f49" >
+			<when expression='#[vars.studentPerformance.studentDetails.personalDetails.category != "General" and vars.seatsOfPreference3.categorySeats &gt;0 and vars.studentPerformance.studentDetails.performanceDetails.categoryRank as Number&lt;=vars.collegeCutoffs.collegeCutoffs.preference3.categoryRank as Number]' >
+				<set-payload value='#[output application/json&#10;---&#10;{&#10;	"collegeId":vars.collegeCutoffs.collegeCutoffs.preference3.collegeId,&#10;	"category":vars.studentPerformance.studentDetails.personalDetails.category,&#10;	"branch":vars.collegeCutoffs.collegeCutoffs.preference3.branch&#10;}]' doc:name="Set Payload For Category Seat Allocation" doc:id="21ee122a-36df-4760-8c46-3683dcda9883" />
+				<flow-ref doc:name="Updating College Seats" doc:id="f313c413-cc3e-425a-9876-c02bffc8e2b4" name="getCollegeSeat_PUT_Sub_Flow" />
+				<async doc:name="Async" doc:id="74492b67-b5cf-44c1-8397-e5afdb3ff40d" >
+					<set-variable value='#[{&#10;	"collegeName":vars.seatsOfPreference3.collegeName,&#10;	"collegeId":vars.collegeCutoffs.collegeCutoffs.preference3.collegeId,&#10;	"category":vars.studentPerformance.studentDetails.personalDetails.category,&#10;	"branch":vars.collegeCutoffs.collegeCutoffs.preference3.branch,&#10;	"seatAllotedCategory":vars.studentPerformance.studentDetails.personalDetails.category&#10;}]' doc:name="Set Alloted College For Information" doc:id="83cc17f1-b0fa-4752-b6b9-d3953c8eb200" variableName="collegeDetailPayload" />
+					<flow-ref doc:name="invoking UpdateAllotedCollege_and_sendEmail" doc:id="963b512c-1376-4065-a542-42a6274437a4" name="UpdateAllotedCollege_and_sendEmail" />
+				</async>
+				<ee:transform doc:name="Transform Message" doc:id="f3b18ace-3620-4f8c-b65b-6cdc46c01282" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Congratulations! You get admission on " ++ vars.seatsOfPreference3.collegeName,
+	"status": "Admission through " ++ vars.studentPerformance.studentDetails.personalDetails.category ++ " Seats",
+	"branch": vars.collegeCutoffs.collegeCutoffs.preference3.branch
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<when expression="#[vars.studentPerformance.studentDetails.performanceDetails.generalRank as Number&lt;=vars.collegeCutoffs.collegeCutoffs.preference3.generalRank as Number and vars.seatsOfPreference3.generalSeats as Number &gt;0]" >
+				<set-payload value='#[output application/json&#10;---&#10;{&#10;	"collegeId":vars.collegeCutoffs.collegeCutoffs.preference3.collegeId,&#10;	"category":"General",&#10;	"branch":vars.collegeCutoffs.collegeCutoffs.preference3.branch&#10;}]' doc:name="Set Payload For General Seat Allocation" doc:id="f88989f3-a8b5-4710-9bd5-5b46eb6f91c1" />
+				<flow-ref doc:name="Updating College Seats" doc:id="290c3a10-bfcb-41c0-b18f-98e5d7a6ee31" name="getCollegeSeat_PUT_Sub_Flow" />
+				<async doc:name="Async" doc:id="7b41028e-e7b4-4e75-a1df-a354573eab7d" >
+					<set-variable value='#[{&#10;	"collegeName":vars.seatsOfPreference3.collegeName,&#10;	"collegeId":vars.collegeCutoffs.collegeCutoffs.preference3.collegeId,&#10;	"category":vars.studentPerformance.studentDetails.personalDetails.category,&#10;	"branch":vars.collegeCutoffs.collegeCutoffs.preference3.branch,&#10;	"seatAllotedCategory":"General"&#10;}]' doc:name="Set Alloted College For Information" doc:id="fcc631d1-99e5-4b62-8c64-58a996146efe" variableName="collegeDetailPayload" />
+					<flow-ref doc:name="invoking UpdateAllotedCollege_and_sendEmail" doc:id="43f0cf79-7425-4a32-b437-ebf7feb2da20" name="UpdateAllotedCollege_and_sendEmail" />
+				</async>
+				<ee:transform doc:name="Transform Message" doc:id="749ffe25-68a5-42cd-83fb-ee45edb9ef53" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Congratulations! You get admission on " ++ vars.seatsOfPreference2.collegeName,
+	"status": "Admission through General Seats",
+	"branch": vars.collegeCutoffs.collegeCutoffs.preference3.branch
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise>
+				<ee:transform doc:name="Transform Message" doc:id="561e5a6f-5c40-498c-bc71-f20bcbacd80f">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":"No seats are available with selected branches,Please try again with different colleges"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</otherwise>
+		</choice>
+	</sub-flow>
+
+</mule>

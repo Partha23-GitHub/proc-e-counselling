@@ -1,0 +1,9 @@
+HTTPListener:
+  port: "8082"
+HTTPRequestor:
+  host: "sys-e-counselling.us-e2.cloudhub.io"
+  client_id: "9694b0b65eb846159668f8f1536d0234"
+  client_secret: "![3f2uwRC54tXj1QMhDToCNH+t+crvIKRrJhAVFmNKZldQK+m3PmuCRHKaMRZRXlsn]"
+  
+company:
+  email: "manna75partha@gmail.com"

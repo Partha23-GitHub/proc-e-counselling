@@ -1,0 +1,31 @@
+#%RAML 1.0
+title: proc-e-counselling
+version: v1
+baseUri: proc-e-counselling/{version}
+mediaType: application/json
+protocols: [https,http]
+traits:
+  client-id-secret : !include Traits/securityClientIdTrait.raml
+
+/allocateSeat:
+  post:
+    description: this will invoke sys-e-counselling collegeSeat-post endpoint to get collegeSeats details
+    is: [client-id-secret]
+    body:
+      application/json:
+        example: !include Examples/allocateSeatRequest-post.json
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include Examples/allocateSeatResponse-post.json
+
+/ping:
+  get:
+    description: Health check endpoint for exp-e-counselling
+    is: [client-id-secret]
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include Examples/pingResponse.json

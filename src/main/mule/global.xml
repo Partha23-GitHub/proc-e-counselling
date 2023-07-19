@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+    <http:listener-config name="api_HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="b6c65adc-0302-4206-807b-3ed2c7915fd3">
+        <http:listener-connection host="0.0.0.0" port="${HTTPListener.port}" protocol="HTTPS">
+			<tls:context >
+				<tls:key-store type="jks" path="keystore.jks" keyPassword="mulesoft" password="mulesoft" />
+			</tls:context>
+		</http:listener-connection>
+    </http:listener-config>
+    <configuration-properties doc:name="Configuration properties" doc:id="016248df-b4a7-4d25-8c73-b5d30848ed4c" file="properties\proc-e-counselling-${env}.yaml" />
+    <http:request-config name="getPerformanceDetails-mongoDB" doc:name="HTTP Request configuration" doc:id="bdebcde6-acd4-43dc-bc97-33eba512415a">
+        <http:request-connection host="${HTTPRequestor.host}" protocol="HTTPS"/>
+    </http:request-config>
+    <http:request-config name="getCollegeCutoff-post" doc:name="HTTP Request configuration" doc:id="1b2ec2f7-5f52-4829-8bab-cbd536fd3b74">
+        <http:request-connection host="${HTTPRequestor.host}" protocol="HTTPS"/>
+    </http:request-config>
+    <http:request-config name="getCollegeSeat-post" doc:name="HTTP Request configuration" doc:id="e32c0842-b15c-4e5b-bdbc-fa8485a7ac7b">
+        <http:request-connection host="${HTTPRequestor.host}" protocol="HTTPS"/>
+    </http:request-config>
+    <http:request-config name="getCollegeSeat-put" doc:name="HTTP Request configuration" doc:id="706fe436-8b58-41d7-88a5-cfcaf1b4d5f1">
+        <http:request-connection host="${HTTPRequestor.host}" protocol="HTTPS"/>
+    </http:request-config>
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="8cae711e-e0fe-46c2-9f1b-3d9b087b32a2" file="properties/proc-e-counselling-${env}.yaml" key="${key.property}" />
+	<configuration doc:name="Configuration" doc:id="ba4dc2d8-710c-4ae1-8d20-1489fac650bf" defaultErrorHandler-ref="globalError_Handler" />
+	<apikit:config outboundHeadersMapName="outboundHeadersMapName" httpStatusVarName="httpStatus" doc:name="Router" doc:id="e504d0c4-866b-418c-9be4-50a504ef8ded" name="api_config" api="api\api.raml" parser="RAML">
+		<apikit:flow-mappings >
+			<apikit:flow-mapping resource="/allocateSeat" action="post" content-type="application/json" flow-ref="post:\allocateSeat:application\json:api-config" />
+		</apikit:flow-mappings>
+	</apikit:config>
+	<http:request-config name="updateAllotedCollege" doc:name="HTTP Request configuration" doc:id="c664bd0a-4a48-47a5-b7da-633046e40700" >
+		<http:request-connection protocol="HTTPS" host="${HTTPRequestor.host}" />
+	</http:request-config>
+	<vm:config name="VM_Config" doc:name="VM Config" doc:id="08638e27-2704-448a-a591-f520ae4aaff2" >
+		<vm:queues >
+			<vm:queue queueName="emailQueue" />
+		</vm:queues>
+	</vm:config>
+	<email:smtp-config name="Email_SMTP_config" doc:name="Email SMTP" doc:id="fb9f4629-0b7f-4328-9c97-fee0201706a9" >
+		<email:smtp-connection host="smtp.gmail.com" port="587" user="manna75partha@gmail.com" password="lkprtwmojefbszht" >
+			<email:properties >
+				<email:property key="mail.smtp.starttls.enable" value="true" />
+			</email:properties>
+		</email:smtp-connection>
+	</email:smtp-config>
+	<api-gateway:autodiscovery apiId="18836128" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="557489d3-687f-4af6-81e2-8d42c1855776" flowRef="api-main" />
+
+</mule>
